@@ -29,6 +29,28 @@ public record Impostazioni(int puntiPerVincere, int scartoMinimo, int velocitaPa
      */
     public Impostazioni {
         // scrivete qui
+        if (!isPuntiValidi(puntiPerVincere)) {
+            throw new IllegalArgumentException("puntiPerVincere fuori intervallo [1, 99]: " + puntiPerVincere);
+        }
+        if (!isScartoValido(scartoMinimo)) {
+            throw new IllegalArgumentException("scartoMinimo fuori intervallo [1, 10]: " + scartoMinimo);
+        }
+        if (!isVelocitaValida(velocitaPalla)) {
+            throw new IllegalArgumentException("velocitaPalla fuori intervallo [1, 20]: " + velocitaPalla);
+        }
+    }
+
+    // Metodi helper per la verifica degli intervalli
+    private static boolean isPuntiValidi(int v) {
+        return v >= 1 && v <= 99;
+    }
+
+    private static boolean isScartoValido(int v) {
+        return v >= 1 && v <= 10;
+    }
+
+    private static boolean isVelocitaValida(int v) {
+        return v >= 1 && v <= 20;
     }
 
     /**
@@ -51,7 +73,80 @@ public record Impostazioni(int puntiPerVincere, int scartoMinimo, int velocitaPa
      * Se ci sono errori in più righe, il messaggio è quello della riga più in alto.
      */
     public static Impostazioni leggi(List<String> righe) {
-        return STANDARD; // scrivete qui
+        int punti = STANDARD.puntiPerVincere();
+        int scarto = STANDARD.scartoMinimo();
+        int velocita = STANDARD.velocitaPalla();
+
+        boolean puntiTrovati = false;
+        boolean scartoTrovato = false;
+        boolean velocitaTrovata = false;
+
+        for (int i = 0; i < righe.size(); i++) {
+            int numRiga = i + 1;
+            String riga = righe.get(i);
+            String rigaTrimmed = riga.trim();
+
+            // Ignora righe vuote o commenti
+            if (rigaTrimmed.isEmpty() || rigaTrimmed.startsWith("#")) {
+                continue;
+            }
+
+            // 1. Manca il segno '='
+            int posUguale = riga.indexOf('=');
+            if (posUguale == -1) {
+                throw new IllegalArgumentException("riga " + numRiga + ": manca il segno '='");
+            }
+
+            String chiave = riga.substring(0, posUguale).trim();
+            String valoreTesto = riga.substring(posUguale + 1).trim();
+
+            // 2. Chiave non valida
+            if (!chiave.equals("puntiPerVincere") && !chiave.equals("scartoMinimo") && !chiave.equals("velocitaPalla")) {
+                throw new IllegalArgumentException("riga " + numRiga + ": chiave sconosciuta '" + chiave + "'");
+            }
+
+            // 3. Valore non è un intero
+            int valore;
+            try {
+                valore = Integer.parseInt(valoreTesto);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("riga " + numRiga + ": valore non intero '" + valoreTesto + "'");
+            }
+
+            // 4. Chiave già vista prima
+            if (chiave.equals("puntiPerVincere") && puntiTrovati) {
+                throw new IllegalArgumentException("riga " + numRiga + ": chiave puntiPerVincere duplicata");
+            }
+            if (chiave.equals("scartoMinimo") && scartoTrovato) {
+                throw new IllegalArgumentException("riga " + numRiga + ": chiave scartoMinimo duplicata");
+            }
+            if (chiave.equals("velocitaPalla") && velocitaTrovata) {
+                throw new IllegalArgumentException("riga " + numRiga + ": chiave velocitaPalla duplicata");
+            }
+
+            // 5. Valore fuori intervallo
+            if (chiave.equals("puntiPerVincere")) {
+                if (!isPuntiValidi(valore)) {
+                    throw new IllegalArgumentException("riga " + numRiga + ": puntiPerVincere fuori intervallo [1, 99]: " + valore);
+                }
+                punti = valore;
+                puntiTrovati = true;
+            } else if (chiave.equals("scartoMinimo")) {
+                if (!isScartoValido(valore)) {
+                    throw new IllegalArgumentException("riga " + numRiga + ": scartoMinimo fuori intervallo [1, 10]: " + valore);
+                }
+                scarto = valore;
+                scartoTrovato = true;
+            } else if (chiave.equals("velocitaPalla")) {
+                if (!isVelocitaValida(valore)) {
+                    throw new IllegalArgumentException("riga " + numRiga + ": velocitaPalla fuori intervallo [1, 20]: " + valore);
+                }
+                velocita = valore;
+                velocitaTrovata = true;
+            }
+        }
+
+        return new Impostazioni(punti, scarto, velocita);
     }
 
     /**
